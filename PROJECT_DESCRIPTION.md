@@ -1,7 +1,7 @@
 # Surety Dashboard — Project Description
 
 **Last Updated:** 2026-06-08
-**Status:** Architecture finalized — Ready for development
+**Status:** ✅ Built & Deployed — [suretydashboard.streamlit.app](https://suretydashboard.streamlit.app)
 
 ---
 
