@@ -36,8 +36,23 @@ _ensure_seeded()
 
 # ── Sidebar navigation ────────────────────────────────────────────────────────
 
+LOGO_URL = "https://www.salasarservices.com/assets/Frontend/images/Salasar-New-Logo.png"
+
 with st.sidebar:
-    st.markdown("### 📊 Surety Dashboard")
+    # Logo on a white panel so it stays visible over the navy gradient
+    st.markdown(
+        f"""
+        <div style="background:#ffffff;border-radius:10px;padding:14px 16px;
+                    margin:0 0 10px 0;text-align:center;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.15);">
+            <img src="{LOGO_URL}" style="width:100%;min-width:200px;height:auto;" />
+        </div>
+        <p style="text-align:center;color:#a6ce39 !important;font-size:12px;
+                  font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+                  margin:0 0 8px 0;">Surety Dashboard</p>
+        """,
+        unsafe_allow_html=True,
+    )
     st.divider()
 
     if "page" not in st.session_state:

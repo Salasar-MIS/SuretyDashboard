@@ -26,8 +26,8 @@ GLOBAL_CSS = """
 /* ── Sidebar ────────────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #172962 0%, #2d448d 100%) !important;
-    min-width: 230px !important;
-    max-width: 230px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
     border-right: none !important;
 }
 [data-testid="stSidebar"] p,
