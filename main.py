@@ -1,11 +1,27 @@
 """
 Streamlit Cloud entry point — root main.py
-Streamlit Cloud runs this file directly from the repo root.
 """
 import streamlit as st
 from app.pages import branch_dashboard, naveen_aggarwal, summary
 from app.utils.queries import get_branch_by_code, get_sub_branches
 from app.utils.db import get_db
+from app.utils.styles import GLOBAL_CSS
+
+st.set_page_config(
+    page_title="Surety Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Inject global CSS on every load
+st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+
+SUB_BRANCH_CODES = [
+    "bangalore", "bhubaneswar", "guwahati", "hyderabad", "indore",
+    "jamshedpur", "kanpur", "kolkata", "mayank_shukla", "nagpur",
+    "raipur", "ranchi",
+]
 
 # Auto-seed the database on first boot if branches collection is empty
 @st.cache_resource
@@ -18,22 +34,10 @@ def _ensure_seeded():
 
 _ensure_seeded()
 
-st.set_page_config(
-    page_title="Surety Dashboard",
-    page_icon="📊",
-    layout="wide",
-)
-
-SUB_BRANCH_CODES = [
-    "bangalore", "bhubaneswar", "guwahati", "hyderabad", "indore",
-    "jamshedpur", "kanpur", "kolkata", "mayank_shukla", "nagpur",
-    "raipur", "ranchi",
-]
-
 # ── Sidebar navigation ────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.title("📊 Surety Dashboard")
+    st.markdown("### 📊 Surety Dashboard")
     st.divider()
 
     if "page" not in st.session_state:
@@ -55,8 +59,7 @@ with st.sidebar:
     with st.expander("Sub-branches", expanded=False):
         naveen = get_branch_by_code("naveen_aggarwal")
         if naveen:
-            sub_branches = get_sub_branches(naveen["_id"])
-            for sb in sub_branches:
+            for sb in get_sub_branches(naveen["_id"]):
                 nav(sb["branch_name"], sb["branch_code"], indent=True)
 
 # ── Page routing ──────────────────────────────────────────────────────────────

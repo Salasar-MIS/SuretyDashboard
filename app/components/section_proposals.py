@@ -1,64 +1,76 @@
 """
 Section 3 — Month Wise Proposal Conversions
-Renders editable Proposals and Converted counts per RM per month.
+Uses st.data_editor with "APR (P)" / "APR (C)" column naming.
+Grand Total shown as read-only dataframe below.
 """
+import pandas as pd
 import streamlit as st
 from bson import ObjectId
 from ..utils.queries import MONTHS, upsert_proposals
-from ..utils.transforms import branch_proposals_table
+
+MONTH_ABBR = ["APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "JAN", "FEB", "MAR"]
+_ABBR_TO_FULL = dict(zip(MONTH_ABBR, MONTHS))
+
+# Flat column names for data_editor: "APR (P)", "APR (C)", ...
+_COLS = [f"{a} ({t})" for a in MONTH_ABBR for t in ("P", "C")]
 
 
 def render_section_proposals(branch_id: ObjectId, fy: str, rms: list, proposals_data: dict):
-    """
-    Display Section 3.
-    Both Proposals and Converted are editable per RM per month.
-    """
-    st.subheader("Section 3 — Month Wise Proposal Conversions")
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<p class="section-label">Section 3</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-title">Month Wise Proposal Conversions</p>', unsafe_allow_html=True)
+    st.caption("P = Proposals &nbsp;|&nbsp; C = Converted")
 
     if not rms:
         st.info("No active RMs for this branch.")
+        st.markdown('</div>', unsafe_allow_html=True)
         return
 
-    rows = branch_proposals_table(rms, proposals_data)
-    data_rows = rows[:-1]
-    grand_total = rows[-1]
+    # Build DataFrame: one column per (month, type) pair
+    rows = {}
+    for rm in rms:
+        rm_prop = proposals_data.get(rm["_id"], {})
+        row = {}
+        for abbr, full in _ABBR_TO_FULL.items():
+            month_data = rm_prop.get(full, {})
+            row[f"{abbr} (P)"] = int(month_data.get("proposals", 0))
+            row[f"{abbr} (C)"] = int(month_data.get("converted", 0))
+        rows[rm["rm_name"]] = row
 
-    # Header row — Name + pairs per month
-    header_cols = st.columns([2] + [1, 1] * 12)
-    header_cols[0].markdown("**Name**")
-    for i, month in enumerate(MONTHS):
-        header_cols[1 + i * 2].markdown(f"**{month}**")
-        header_cols[2 + i * 2].markdown("")
+    original_df = pd.DataFrame(rows).T[_COLS].astype(int)
+    original_df.index.name = "RM Name"
 
-    # Sub-header row
-    sub_cols = st.columns([2] + [1, 1] * 12)
-    sub_cols[0].write("")
-    for i in range(12):
-        sub_cols[1 + i * 2].markdown("*Prop.*")
-        sub_cols[2 + i * 2].markdown("*Conv.*")
+    edited_df = st.data_editor(
+        original_df,
+        column_config={
+            col: st.column_config.NumberColumn(col, min_value=0, step=1, format="%d")
+            for col in _COLS
+        },
+        use_container_width=True,
+        num_rows="fixed",
+        key=f"prop_{branch_id}_{fy}",
+    )
 
-    # Editable data rows
-    for row in data_rows:
-        cols = st.columns([2] + [1, 1] * 12)
-        cols[0].write(row["rm_name"])
-        for i, month in enumerate(MONTHS):
-            p_key = f"prop_{branch_id}_{row['rm_id']}_{month}"
-            c_key = f"conv_{branch_id}_{row['rm_id']}_{month}"
-            new_p = cols[1 + i * 2].number_input(
-                label=p_key, value=int(row.get(f"{month}_p", 0)),
-                min_value=0, step=1, label_visibility="collapsed", key=p_key,
-            )
-            new_c = cols[2 + i * 2].number_input(
-                label=c_key, value=int(row.get(f"{month}_c", 0)),
-                min_value=0, step=1, label_visibility="collapsed", key=c_key,
-            )
-            if new_p != row.get(f"{month}_p", 0) or new_c != row.get(f"{month}_c", 0):
-                upsert_proposals(row["rm_id"], branch_id, fy, month, new_p, new_c)
-                st.rerun()
+    # Detect changes and persist
+    if not edited_df.equals(original_df):
+        rm_map = {rm["rm_name"]: rm for rm in rms}
+        for rm_name in edited_df.index:
+            for abbr, full in _ABBR_TO_FULL.items():
+                p_col = f"{abbr} (P)"
+                c_col = f"{abbr} (C)"
+                new_p = int(edited_df.loc[rm_name, p_col])
+                new_c = int(edited_df.loc[rm_name, c_col])
+                old_p = int(original_df.loc[rm_name, p_col])
+                old_c = int(original_df.loc[rm_name, c_col])
+                if new_p != old_p or new_c != old_c:
+                    upsert_proposals(rm_map[rm_name]["_id"], branch_id, fy,
+                                     full, new_p, new_c)
+        st.rerun()
 
     # Grand Total row (read-only)
-    cols = st.columns([2] + [1, 1] * 12)
-    cols[0].markdown("**Grand Total**")
-    for i, month in enumerate(MONTHS):
-        cols[1 + i * 2].markdown(f"**{grand_total.get(f'{month}_p', 0)}**")
-        cols[2 + i * 2].markdown(f"**{grand_total.get(f'{month}_c', 0)}**")
+    totals = edited_df.sum().to_frame().T
+    totals.index = ["GRAND TOTAL"]
+    totals.index.name = "RM Name"
+    st.dataframe(totals, use_container_width=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
