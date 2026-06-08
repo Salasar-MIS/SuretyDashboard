@@ -16,12 +16,21 @@ def _get_uri() -> str:
         raise EnvironmentError("MONGO_URI not set — add it to .env or Streamlit secrets.")
     return uri
 
-# Cache the MongoClient across all Streamlit sessions (recommended pattern)
 @st.cache_resource
 def _get_client():
-    client = MongoClient(_get_uri(), serverSelectionTimeoutMS=5000)
-    client.admin.command("ping")
-    return client
+    """
+    Single MongoClient shared across all Streamlit sessions.
+    Pool tuned for a dashboard workload: many short reads, few writes.
+    """
+    return MongoClient(
+        _get_uri(),
+        maxPoolSize=20,
+        minPoolSize=2,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+        socketTimeoutMS=10000,
+        retryWrites=True,
+    )
 
 def get_db():
     """Return the surety_dashboard database."""
