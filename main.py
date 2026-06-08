@@ -5,6 +5,18 @@ Streamlit Cloud runs this file directly from the repo root.
 import streamlit as st
 from app.pages import branch_dashboard, naveen_aggarwal, summary
 from app.utils.queries import get_branch_by_code, get_sub_branches
+from app.utils.db import get_db
+
+# Auto-seed the database on first boot if branches collection is empty
+@st.cache_resource
+def _ensure_seeded():
+    if get_db()["branches"].count_documents({}) == 0:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from seed import seed
+        seed()
+
+_ensure_seeded()
 
 st.set_page_config(
     page_title="Surety Dashboard",
