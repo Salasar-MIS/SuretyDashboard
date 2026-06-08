@@ -22,7 +22,7 @@ def get_all_branches():
 def get_branch_by_code(code: str):
     return get_db()["branches"].find_one({"branch_code": code})
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, hash_funcs={ObjectId: str})
 def get_sub_branches(parent_id: ObjectId):
     return list(get_db()["branches"].find(
         {"parent_id": parent_id, "branch_type": "sub"}
@@ -37,7 +37,7 @@ def get_main_branches():
 
 # ── RM helpers ────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, hash_funcs={ObjectId: str})
 def get_rms(branch_id: ObjectId, active_only: bool = True):
     query = {"branch_id": branch_id}
     if active_only:
@@ -71,7 +71,7 @@ def rename_rm(rm_id: ObjectId, new_name: str):
 
 # ── Revenue ───────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=30, hash_funcs={ObjectId: str})
 def get_revenue_for_branch(branch_id: ObjectId, fy: str) -> dict:
     """Return {rm_id: {month: amount}} for all RMs in a branch."""
     rows = get_db()["monthly_revenue"].find({"branch_id": branch_id, "financial_year": fy})
@@ -91,7 +91,7 @@ def upsert_revenue(rm_id: ObjectId, branch_id: ObjectId, fy: str, month: str, am
 
 # ── Targets ───────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=30, hash_funcs={ObjectId: str})
 def get_targets_for_branch(branch_id: ObjectId, fy: str) -> dict:
     """Return {rm_id: target_amount}."""
     rows = get_db()["rm_targets"].find({"branch_id": branch_id, "financial_year": fy})
@@ -108,7 +108,7 @@ def upsert_target(rm_id: ObjectId, branch_id: ObjectId, fy: str, amount: float):
 
 # ── Proposals ─────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=30, hash_funcs={ObjectId: str})
 def get_proposals_for_branch(branch_id: ObjectId, fy: str) -> dict:
     """Return {rm_id: {month: {"proposals": int, "converted": int}}}."""
     rows = get_db()["proposal_conversions"].find({"branch_id": branch_id, "financial_year": fy})
