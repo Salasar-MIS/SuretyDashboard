@@ -63,6 +63,34 @@ GLOBAL_CSS = """
     background: rgba(166,206,57,0.18) !important;
     color: #a6ce39 !important;
 }
+/* Sidebar expander (Sub-branches) — keep dark so light text stays readable */
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 8px !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary,
+[data-testid="stSidebar"] [data-testid="stExpander"] details {
+    background: transparent !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] * {
+    background: transparent !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+/* Sub-branch nav buttons inside expander — readable light text + green hover */
+[data-testid="stSidebar"] [data-testid="stExpander"] button {
+    color: #e2e9f8 !important;
+    font-weight: 500 !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] button:hover {
+    background: rgba(166,206,57,0.20) !important;
+    color: #a6ce39 !important;
+}
+
 /* ── Hide collapse / close arrow — all known selectors ────────────────────── */
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"],
