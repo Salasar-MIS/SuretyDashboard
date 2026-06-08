@@ -1,33 +1,28 @@
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
+import streamlit as st
 
 load_dotenv()
 
-_client = None
-
 def _get_uri() -> str:
-    """
-    Resolve MongoDB URI.
-    Streamlit Cloud stores secrets in st.secrets; local dev uses .env.
-    """
-    # Try Streamlit secrets first (Streamlit Cloud deployment)
+    """Resolve MongoDB URI — Streamlit secrets first, .env fallback."""
     try:
-        import streamlit as st
         return st.secrets["MONGO_URI"]
-    except (ImportError, KeyError):
+    except (AttributeError, KeyError):
         pass
-    # Fall back to .env / environment variable (local dev)
     uri = os.getenv("MONGO_URI")
     if not uri:
         raise EnvironmentError("MONGO_URI not set — add it to .env or Streamlit secrets.")
     return uri
 
+# Cache the MongoClient across all Streamlit sessions (recommended pattern)
+@st.cache_resource
+def _get_client():
+    client = MongoClient(_get_uri(), serverSelectionTimeoutMS=5000)
+    client.admin.command("ping")
+    return client
+
 def get_db():
-    """Return the surety_dashboard database, reusing the connection."""
-    global _client
-    if _client is None:
-        _client = MongoClient(_get_uri(), serverSelectionTimeoutMS=5000)
-        _client.admin.command("ping")
-    db_name = os.getenv("MONGO_DB", "surety_dashboard")
-    return _client[db_name]
+    """Return the surety_dashboard database."""
+    return _get_client()["surety_dashboard"]

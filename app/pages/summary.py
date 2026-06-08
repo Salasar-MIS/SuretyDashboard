@@ -29,6 +29,14 @@ def _naveen_grand_totals(fy):
     Naveen Aggarwal's Grand Total = sum of all 12 sub-branch Grand Totals.
     """
     naveen = get_branch_by_code("naveen_aggarwal")
+    if not naveen:
+        # Return zeroed totals if branch not yet seeded
+        rev  = {m: 0.0 for m in MONTHS}
+        rev["total"] = 0.0
+        lkh  = {"target": 0.0, "achievement": 0.0}
+        prop = {f"{m}_p": 0 for m in MONTHS}
+        prop.update({f"{m}_c": 0 for m in MONTHS})
+        return rev, lkh, prop
     sub_branches = get_sub_branches(naveen["_id"])
 
     rev_sum  = {m: 0.0 for m in MONTHS}
